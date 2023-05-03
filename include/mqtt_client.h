@@ -12,6 +12,8 @@
 #include <string.h>
 #include "esp_err.h"
 #include "esp_event.h"
+#include "esp_transport.h"
+#include "esp_transport_http_proxy.h"
 #ifdef CONFIG_MQTT_PROTOCOL_5
 #include "mqtt5_client.h"
 #endif
@@ -347,6 +349,9 @@ typedef struct esp_mqtt_client_config_t {
         int out_size; /*!< size of *MQTT* output buffer. If not defined, defaults to the size defined by
               ``buffer_size`` */
     } buffer; /*!< Buffer size configuration.*/
+
+    bool use_http_proxy;
+    esp_transport_http_proxy_config_t http_proxy;
 } esp_mqtt_client_config_t;
 
 /**

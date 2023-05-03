@@ -13,9 +13,11 @@
 #include "esp_err.h"
 #include "platform.h"
 
+#include "esp_transport.h"
 #include "esp_event.h"
 #include "mqtt_client.h"
 #include "mqtt_msg.h"
+#include "esp_transport_http_proxy.h"
 #ifdef MQTT_PROTOCOL_5
 #include "mqtt5_client_priv.h"
 #endif
@@ -91,6 +93,8 @@ typedef struct {
     bool use_secure_element;
     void *ds_data;
     int message_retransmit_timeout;
+    bool use_http_proxy;
+    esp_transport_http_proxy_config_t http_proxy;
 } mqtt_config_storage_t;
 
 typedef enum {

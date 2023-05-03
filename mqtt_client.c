@@ -3,7 +3,7 @@
 #include "esp_log.h"
 #include <stdint.h>
 #include "esp_heap_caps.h"
-
+#include "esp_transport_http_proxy.h"
 
 _Static_assert(sizeof(uint64_t) == sizeof(outbox_tick_t), "mqtt-client tick type size different from outbox tick type");
 #ifdef ESP_EVENT_ANY_ID
@@ -294,7 +294,15 @@ static esp_err_t esp_mqtt_client_create_transport(esp_mqtt_client_handle_t clien
             esp_transport_list_add(client->transport_list, tcp, MQTT_OVER_TCP_SCHEME);
             if (strncasecmp(client->config->scheme, MQTT_OVER_WS_SCHEME, sizeof(MQTT_OVER_WS_SCHEME)) == 0) {
 #if MQTT_ENABLE_WS
-                esp_transport_handle_t ws = esp_transport_ws_init(tcp);
+                esp_transport_handle_t ws = NULL;
+                esp_transport_handle_t proxy_handle = NULL;
+                if (client->config->use_http_proxy) {
+                    proxy_handle = esp_transport_http_proxy_init(tcp, &client->config->http_proxy);
+                    ws = esp_transport_ws_init(proxy_handle);
+                } else {
+                    ws = esp_transport_ws_init(tcp);
+                }
+
                 ESP_MEM_CHECK(TAG, ws, return ESP_ERR_NO_MEM);
                 esp_transport_set_default_port(ws, MQTT_WS_DEFAULT_PORT);
                 if (client->config->path) {
@@ -303,6 +311,10 @@ static esp_err_t esp_mqtt_client_create_transport(esp_mqtt_client_handle_t clien
 #ifdef MQTT_SUPPORTED_FEATURE_WS_SUBPROTOCOL
                 esp_transport_ws_set_subprotocol(ws, MQTT_OVER_TCP_SCHEME);
 #endif
+                if (client->config->use_http_proxy) {
+                    esp_transport_list_add(client->transport_list, proxy_handle, "_http_proxy");
+                }
+
                 esp_transport_list_add(client->transport_list, ws, MQTT_OVER_WS_SCHEME);
 #else
                 ESP_LOGE(TAG, "Please enable MQTT_ENABLE_WS to use %s", client->config->scheme);
@@ -317,7 +329,15 @@ static esp_err_t esp_mqtt_client_create_transport(esp_mqtt_client_handle_t clien
             esp_transport_list_add(client->transport_list, ssl, MQTT_OVER_SSL_SCHEME);
             if (strncasecmp(client->config->scheme, MQTT_OVER_WSS_SCHEME, sizeof(MQTT_OVER_WSS_SCHEME)) == 0) {
 #if MQTT_ENABLE_WS
-                esp_transport_handle_t wss = esp_transport_ws_init(ssl);
+                esp_transport_handle_t wss = NULL;
+                esp_transport_handle_t proxy_handle = NULL;
+                if (client->config->use_http_proxy) {
+                    proxy_handle = esp_transport_http_proxy_init(ssl, &client->config->http_proxy);
+                    wss = esp_transport_ws_init(proxy_handle);
+                } else {
+                    wss = esp_transport_ws_init(ssl);
+                }
+
                 ESP_MEM_CHECK(TAG, wss, return ESP_ERR_NO_MEM);
                 esp_transport_set_default_port(wss, MQTT_WSS_DEFAULT_PORT);
                 if (client->config->path) {
@@ -326,6 +346,10 @@ static esp_err_t esp_mqtt_client_create_transport(esp_mqtt_client_handle_t clien
 #ifdef MQTT_SUPPORTED_FEATURE_WS_SUBPROTOCOL
                 esp_transport_ws_set_subprotocol(wss, MQTT_OVER_TCP_SCHEME);
 #endif
+                if (client->config->use_http_proxy) {
+                    esp_transport_list_add(client->transport_list, proxy_handle, "_https_proxy");
+                }
+
                 esp_transport_list_add(client->transport_list, wss, MQTT_OVER_WSS_SCHEME);
 #else
                 ESP_LOGE(TAG, "Please enable MQTT_ENABLE_WS to use %s", client->config->scheme);
@@ -544,6 +568,13 @@ esp_err_t esp_mqtt_set_config(esp_mqtt_client_handle_t client, const esp_mqtt_cl
             ESP_MEM_CHECK(TAG, client->config->scheme, goto _mqtt_set_config_failed);
         }
 #endif
+    }
+
+    if (config->use_http_proxy) {
+        client->config->use_http_proxy = true;
+        memcpy(&client->config->http_proxy, &config->http_proxy, sizeof(esp_transport_http_proxy_config_t));
+    } else {
+        client->config->use_http_proxy = false;
     }
 
     // Set uri at the end of config to override separately configured uri elements

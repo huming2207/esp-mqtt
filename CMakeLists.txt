@@ -8,7 +8,7 @@ list(TRANSFORM srcs PREPEND ${CMAKE_CURRENT_LIST_DIR}/)
 idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS ${CMAKE_CURRENT_LIST_DIR}/include
                     PRIV_INCLUDE_DIRS ${CMAKE_CURRENT_LIST_DIR}/lib/include
-                    REQUIRES esp_event tcp_transport
+                    REQUIRES esp_event tcp_transport http_proxy
                     PRIV_REQUIRES esp_timer http_parser esp_hw_support heap
                     KCONFIG ${CMAKE_CURRENT_LIST_DIR}/Kconfig
                     )
