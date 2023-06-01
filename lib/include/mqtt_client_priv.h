@@ -92,6 +92,7 @@ typedef struct {
     void *ds_data;
     int message_retransmit_timeout;
     esp_transport_handle_t ext_transport;
+    struct ifreq *if_name;
 } mqtt_config_storage_t;
 
 typedef enum {

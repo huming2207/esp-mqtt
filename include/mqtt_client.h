@@ -349,6 +349,7 @@ typedef struct esp_mqtt_client_config_t {
               ``buffer_size`` */
     } buffer; /*!< Buffer size configuration.*/
     esp_transport_handle_t ext_transport; /*!< External tcp_transport handle to the client, e.g. proxy; or if null, the client will create its own transport handle. */
+    struct ifreq *if_name;
 } esp_mqtt_client_config_t;
 
 /**

@@ -294,6 +294,11 @@ static esp_err_t esp_mqtt_client_create_transport(esp_mqtt_client_handle_t clien
                 tcp = client->config->ext_transport;
             } else {
                 tcp = esp_transport_tcp_init();
+                ESP_MEM_CHECK(TAG, tcp, return ESP_ERR_NO_MEM);
+
+                if (client->config->if_name) {
+                    esp_transport_ssl_set_interface_name(tcp, client->config->if_name);
+                }
             }
 
             ESP_MEM_CHECK(TAG, tcp, return ESP_ERR_NO_MEM);
@@ -324,6 +329,11 @@ static esp_err_t esp_mqtt_client_create_transport(esp_mqtt_client_handle_t clien
                 ssl = client->config->ext_transport;
             } else {
                 ssl = esp_transport_ssl_init();
+                ESP_MEM_CHECK(TAG, ssl, return ESP_ERR_NO_MEM);
+
+                if (client->config->if_name) {
+                    esp_transport_ssl_set_interface_name(ssl, client->config->if_name);
+                }
             }
 
             ESP_MEM_CHECK(TAG, ssl, return ESP_ERR_NO_MEM);
@@ -564,6 +574,10 @@ esp_err_t esp_mqtt_set_config(esp_mqtt_client_handle_t client, const esp_mqtt_cl
         client->config->ext_transport = config->ext_transport;
     } else {
         client->config->ext_transport = NULL;
+    }
+
+    if (config->if_name) {
+        client->config->if_name = config->if_name;
     }
 
     // Set uri at the end of config to override separately configured uri elements
